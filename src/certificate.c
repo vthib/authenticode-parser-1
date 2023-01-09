@@ -64,7 +64,7 @@ static void parse_name_attributes(X509_NAME* raw, Attributes* attr)
         const char* key = OBJ_nid2sn(OBJ_obj2nid(X509_NAME_ENTRY_get_object(entryName)));
 
         ByteArray array = {0};
-        if (byte_array_init(&array, asn1String->data, asn1String->length) == -1)
+        if (ap_byte_array_init(&array, asn1String->data, asn1String->length) == -1)
             break;
 
         if (strcmp(key, "C") == 0 && !attr->country.data)
@@ -103,7 +103,7 @@ static void parse_name_attributes(X509_NAME* raw, Attributes* attr)
 }
 
 /* Reconstructs signers certificate chain */
-CertificateArray* parse_signer_chain(X509* signCert, STACK_OF(X509) * certs)
+CertificateArray* ap_parse_signer_chain(X509* signCert, STACK_OF(X509) * certs)
 {
     if (!signCert || !certs)
         return NULL;
@@ -139,7 +139,7 @@ CertificateArray* parse_signer_chain(X509* signCert, STACK_OF(X509) * certs)
 
     /* Convert each certificate to internal representation */
     for (int i = 0; i < certCount; ++i) {
-        Certificate* cert = certificate_new(sk_X509_value(chain, i));
+        Certificate* cert = ap_certificate_new(sk_X509_value(chain, i));
         if (!cert)
             goto error;
 
@@ -154,7 +154,7 @@ CertificateArray* parse_signer_chain(X509* signCert, STACK_OF(X509) * certs)
 error: /* In case of error, return nothing */
     if (result) {
         for (size_t i = 0; i < result->count; ++i) {
-            certificate_free(result->certs[i]);
+            ap_certificate_free(result->certs[i]);
         }
         free(result->certs);
         free(result);
@@ -263,7 +263,7 @@ static char* pubkey_to_pem(EVP_PKEY* pubkey)
     return (char*)result;
 }
 
-Certificate* certificate_new(X509* x509)
+Certificate* ap_certificate_new(X509* x509)
 {
     Certificate* result = (Certificate*)calloc(1, sizeof(*result));
     if (!result)
@@ -308,8 +308,8 @@ Certificate* certificate_new(X509* x509)
 
     result->version = X509_get_version(x509);
     result->serial = integer_to_serial(X509_get_serialNumber(x509));
-    result->not_after = ASN1_TIME_to_int64_t(X509_get0_notAfter(x509));
-    result->not_before = ASN1_TIME_to_int64_t(X509_get0_notBefore(x509));
+    result->not_after = ap_ASN1_TIME_to_int64_t(X509_get0_notAfter(x509));
+    result->not_before = ap_ASN1_TIME_to_int64_t(X509_get0_notBefore(x509));
     int sig_nid = X509_get_signature_nid(x509);
     result->sig_alg = strdup(OBJ_nid2ln(sig_nid));
 
@@ -331,7 +331,7 @@ Certificate* certificate_new(X509* x509)
 
 /* Moves certificates from src to dst, returns 0 on success,
  * else 1. If error occurs, arguments are unchanged */
-int certificate_array_move(CertificateArray* dst, CertificateArray* src)
+int ap_certificate_array_move(CertificateArray* dst, CertificateArray* src)
 {
     size_t newCount = dst->count + src->count;
 
@@ -354,7 +354,7 @@ int certificate_array_move(CertificateArray* dst, CertificateArray* src)
 }
 
 /* Allocates empty certificate array with reserved space for certCount certs */
-CertificateArray* certificate_array_new(int certCount)
+CertificateArray* ap_certificate_array_new(int certCount)
 {
     CertificateArray* arr = (CertificateArray*)malloc(sizeof(*arr));
     if (!arr)
@@ -390,7 +390,7 @@ static void certificate_attributes_free(Attributes attrs)
     free(attrs.emailAddress.data);
 }
 
-void certificate_free(Certificate* cert)
+void ap_certificate_free(Certificate* cert)
 {
     if (cert) {
         free(cert->issuer);
@@ -408,11 +408,11 @@ void certificate_free(Certificate* cert)
     }
 }
 
-void certificate_array_free(CertificateArray* arr)
+void ap_certificate_array_free(CertificateArray* arr)
 {
     if (arr) {
         for (size_t i = 0; i < arr->count; ++i) {
-            certificate_free(arr->certs[i]);
+            ap_certificate_free(arr->certs[i]);
         }
         free(arr->certs);
         free(arr);

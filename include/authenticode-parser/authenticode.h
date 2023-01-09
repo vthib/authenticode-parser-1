@@ -160,7 +160,7 @@ typedef struct {
  *        needs to be called only once, before any multithreading environment
  *        https://github.com/openssl/openssl/issues/13524
  */
-void initialize_authenticode_parser();
+void ap_initialize_authenticode_parser();
 
 /**
  * @brief Constructs AuthenticodeArray from PE file data. Authenticode can
@@ -174,7 +174,7 @@ void initialize_authenticode_parser();
  * @param pe_len
  * @return AuthenticodeArray*
  */
-AuthenticodeArray* parse_authenticode(const uint8_t* pe_data, uint64_t pe_len);
+AuthenticodeArray* ap_parse_authenticode(const uint8_t* pe_data, uint64_t pe_len);
 
 /**
  * @brief Constructs AuthenticodeArray from binary data containing Authenticode
@@ -190,14 +190,14 @@ AuthenticodeArray* parse_authenticode(const uint8_t* pe_data, uint64_t pe_len);
  * @param len
  * @return AuthenticodeArray*
  */
-AuthenticodeArray* authenticode_new(const uint8_t* data, int32_t len);
+AuthenticodeArray* ap_authenticode_new(const uint8_t* data, int32_t len);
 
 /**
  * @brief Deallocates AuthenticodeArray and all it's allocated members
  *
  * @param auth
  */
-void authenticode_array_free(AuthenticodeArray* auth);
+void ap_authenticode_array_free(AuthenticodeArray* auth);
 
 #ifdef __cplusplus
 }

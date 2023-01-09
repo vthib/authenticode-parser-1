@@ -28,7 +28,7 @@ TEST(CertificateModule, certificate_array_move)
     array2.certs[0] = &cert1;
     array2.certs[1] = &cert2;
 
-    int res = certificate_array_move(&array1, &array2);
+    int res = ap_certificate_array_move(&array1, &array2);
     EXPECT_EQ(res, 0);
 
     ASSERT_TRUE(array1.certs);
@@ -53,7 +53,7 @@ TEST(CertificateModule, certificate_new)
     X509 *x509 = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
     ASSERT_TRUE(x509);
 
-    Certificate *cert = certificate_new(x509);
+    Certificate *cert = ap_certificate_new(x509);
     ASSERT_TRUE(cert);
 
     EXPECT_EQ(cert->version, 2);
@@ -79,6 +79,6 @@ TEST(CertificateModule, certificate_new)
     EXPECT_TRUE(std::memcmp(cert->sha1.data, sha1, 20) == 0);
 
     X509_free(x509);
-    certificate_free(cert);
+    ap_certificate_free(cert);
     BIO_free_all(bio);
 }

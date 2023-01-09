@@ -36,7 +36,7 @@ SOFTWARE.
 #include "helper.h"
 #include "structs.h"
 
-Countersignature* pkcs9_countersig_new(
+Countersignature* ap_pkcs9_countersig_new(
     const uint8_t* data, long size, STACK_OF(X509) * certs, ASN1_STRING* enc_digest)
 {
     Countersignature* result = (Countersignature*)calloc(1, sizeof(*result));
@@ -58,7 +58,7 @@ Countersignature* pkcs9_countersig_new(
         goto end;
     }
 
-    result->sign_time = ASN1_TIME_to_int64_t(sign_time->value.utctime);
+    result->sign_time = ap_ASN1_TIME_to_int64_t(sign_time->value.utctime);
 
     X509* signCert = X509_find_by_issuer_and_serial(
         certs, si->issuer_and_serial->issuer, si->issuer_and_serial->serial);
@@ -68,7 +68,7 @@ Countersignature* pkcs9_countersig_new(
     }
 
     /* PKCS9 stores certificates in the corresponding PKCS7 it countersigns */
-    result->chain = parse_signer_chain(signCert, certs);
+    result->chain = ap_parse_signer_chain(signCert, certs);
 
     /* Get digest that corresponds to decrypted encrypted digest in signature */
     ASN1_TYPE* messageDigest = PKCS7_get_signed_attribute(si, NID_pkcs9_messageDigest);
@@ -91,7 +91,7 @@ Countersignature* pkcs9_countersig_new(
     }
 
     const uint8_t* digestData = messageDigest->value.octet_string->data;
-    byte_array_init(&result->digest, digestData, digestLen);
+    ap_byte_array_init(&result->digest, digestData, digestLen);
 
     /* By this point we all necessary things for verification
      * Get DER representation of the authenticated attributes to calculate its
@@ -101,7 +101,7 @@ Countersignature* pkcs9_countersig_new(
         (ASN1_VALUE*)si->auth_attr, &authAttrsData, ASN1_ITEM_rptr(PKCS7_ATTR_VERIFY));
 
     uint8_t calc_digest[EVP_MAX_MD_SIZE];
-    calculate_digest(md, authAttrsData, authAttrsLen, calc_digest);
+    ap_calculate_digest(md, authAttrsData, authAttrsLen, calc_digest);
     OPENSSL_free(authAttrsData);
 
     /* Get public key to decrypt encrypted digest of auth attrs */
@@ -165,7 +165,7 @@ Countersignature* pkcs9_countersig_new(
 
     /* Now check the countersignature message-digest that should correspond
      * to Signatures encrypted digest it countersigns */
-    calculate_digest(md, enc_digest->data, enc_digest->length, calc_digest);
+    ap_calculate_digest(md, enc_digest->data, enc_digest->length, calc_digest);
 
     /* Check if calculated one matches the stored one */
     if (digestLen != mdLen || memcmp(calc_digest, digestData, mdLen) != 0) {
@@ -178,7 +178,7 @@ end:
     return result;
 }
 
-Countersignature* ms_countersig_new(const uint8_t* data, long size, ASN1_STRING* enc_digest)
+Countersignature* ap_ms_countersig_new(const uint8_t* data, long size, ASN1_STRING* enc_digest)
 {
     Countersignature* result = (Countersignature*)calloc(1, sizeof(*result));
     if (!result)
@@ -205,7 +205,7 @@ Countersignature* ms_countersig_new(const uint8_t* data, long size, ASN1_STRING*
         return result;
     }
 
-    result->sign_time = ASN1_TIME_to_int64_t(rawTime);
+    result->sign_time = ap_ASN1_TIME_to_int64_t(rawTime);
 
     STACK_OF(X509)* sigs = PKCS7_get0_signers(p7, p7->d.sign->cert, 0);
     X509* signCert = sk_X509_value(sigs, 0);
@@ -214,7 +214,7 @@ Countersignature* ms_countersig_new(const uint8_t* data, long size, ASN1_STRING*
         goto end;
     }
 
-    result->chain = parse_signer_chain(signCert, p7->d.sign->cert);
+    result->chain = ap_parse_signer_chain(signCert, p7->d.sign->cert);
 
     /* Imprint == digest */
     TS_MSG_IMPRINT* imprint = TS_TST_INFO_get_msg_imprint(ts);
@@ -232,7 +232,7 @@ Countersignature* ms_countersig_new(const uint8_t* data, long size, ASN1_STRING*
     int digestLen = rawDigest->length;
     uint8_t* digestData = rawDigest->data;
 
-    byte_array_init(&result->digest, digestData, digestLen);
+    ap_byte_array_init(&result->digest, digestData, digestLen);
 
     if (!digestLen) {
         result->verify_flags = COUNTERSIGNATURE_VFY_DIGEST_MISSING;
@@ -246,7 +246,7 @@ Countersignature* ms_countersig_new(const uint8_t* data, long size, ASN1_STRING*
     }
 
     uint8_t calc_digest[EVP_MAX_MD_SIZE];
-    calculate_digest(md, enc_digest->data, enc_digest->length, calc_digest);
+    ap_calculate_digest(md, enc_digest->data, enc_digest->length, calc_digest);
 
 #if OPENSSL_VERSION_NUMBER >= 0x3000000fL
     int mdLen = EVP_MD_get_size(md);
@@ -308,7 +308,7 @@ end:
     return result;
 }
 
-int countersignature_array_insert(CountersignatureArray* arr, Countersignature* sig)
+int ap_countersignature_array_insert(CountersignatureArray* arr, Countersignature* sig)
 {
     Countersignature** tmp =
         (Countersignature**)realloc(arr->counters, (arr->count + 1) * sizeof(Countersignature*));
@@ -322,7 +322,7 @@ int countersignature_array_insert(CountersignatureArray* arr, Countersignature* 
     return 0;
 }
 
-int countersignature_array_move(CountersignatureArray* dst, CountersignatureArray* src)
+int ap_countersignature_array_move(CountersignatureArray* dst, CountersignatureArray* src)
 {
     size_t newCount = dst->count + src->count;
 
@@ -345,21 +345,21 @@ int countersignature_array_move(CountersignatureArray* dst, CountersignatureArra
     return 0;
 }
 
-void countersignature_free(Countersignature* sig)
+void ap_countersignature_free(Countersignature* sig)
 {
     if (sig) {
         free(sig->digest_alg);
         free(sig->digest.data);
-        certificate_array_free(sig->chain);
+        ap_certificate_array_free(sig->chain);
         free(sig);
     }
 }
 
-void countersignature_array_free(CountersignatureArray* arr)
+void ap_countersignature_array_free(CountersignatureArray* arr)
 {
     if (arr) {
         for (size_t i = 0; i < arr->count; ++i) {
-            countersignature_free(arr->counters[i]);
+            ap_countersignature_free(arr->counters[i]);
         }
         free(arr->counters);
         free(arr);

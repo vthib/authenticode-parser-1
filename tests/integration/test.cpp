@@ -51,7 +51,7 @@ class SignatureTest : public testing::Test
         OPENSSL_free(name);
         OPENSSL_free(header);
 
-        initialize_authenticode_parser();
+        ap_initialize_authenticode_parser();
     }
 
     void TearDown() override { OPENSSL_free(data); }
@@ -59,7 +59,7 @@ class SignatureTest : public testing::Test
 
 TEST_F(SignatureTest, ResultOverview)
 {
-    AuthenticodeArray *auth = authenticode_new(data, data_len);
+    AuthenticodeArray *auth = ap_authenticode_new(data, data_len);
     ASSERT_NE(auth, nullptr);
 
     ASSERT_EQ(auth->count, 3);
@@ -69,12 +69,12 @@ TEST_F(SignatureTest, ResultOverview)
         ASSERT_TRUE(auth->signatures[i]);
     }
 
-    authenticode_array_free(auth);
+    ap_authenticode_array_free(auth);
 }
 
 TEST_F(SignatureTest, FirstSignatureContent)
 {
-    AuthenticodeArray *auth = authenticode_new(data, data_len);
+    AuthenticodeArray *auth = ap_authenticode_new(data, data_len);
     ASSERT_NE(auth, nullptr);
 
     ASSERT_EQ(auth->count, 3);
@@ -380,12 +380,12 @@ TEST_F(SignatureTest, FirstSignatureContent)
     EXPECT_STREQ(cert->sig_alg_oid, "1.2.840.113549.1.1.5");
     EXPECT_STREQ(cert->key_alg, "rsaEncryption");
 
-    authenticode_array_free(auth);
+    ap_authenticode_array_free(auth);
 }
 
 TEST_F(SignatureTest, SecondSignatureContent)
 {
-    AuthenticodeArray *auth = authenticode_new(data, data_len);
+    AuthenticodeArray *auth = ap_authenticode_new(data, data_len);
     ASSERT_NE(auth, nullptr);
 
     ASSERT_EQ(auth->count, 3);
@@ -664,12 +664,12 @@ TEST_F(SignatureTest, SecondSignatureContent)
     EXPECT_STREQ(cert->sig_alg_oid, "1.2.840.113549.1.1.11");
     EXPECT_STREQ(cert->key_alg, "rsaEncryption");
 
-    authenticode_array_free(auth);
+    ap_authenticode_array_free(auth);
 }
 
 TEST_F(SignatureTest, ThirdSignatureContent)
 {
-    AuthenticodeArray *auth = authenticode_new(data, data_len);
+    AuthenticodeArray *auth = ap_authenticode_new(data, data_len);
     ASSERT_NE(auth, nullptr);
 
     ASSERT_EQ(auth->count, 3);
@@ -824,14 +824,14 @@ TEST_F(SignatureTest, ThirdSignatureContent)
     ASSERT_TRUE(countersig->chain);
     EXPECT_EQ(countersig->chain->count, 2);
 
-    authenticode_array_free(auth);
+    ap_authenticode_array_free(auth);
 }
 
 TEST(PefileTest, ResultOverview)
 {
-    initialize_authenticode_parser();
+    ap_initialize_authenticode_parser();
 
-    AuthenticodeArray *auth = parse_authenticode(PE_FILE_1, PE_FILE_1_LEN);
+    AuthenticodeArray *auth = ap_parse_authenticode(PE_FILE_1, PE_FILE_1_LEN);
     ASSERT_NE(auth, nullptr);
 
     ASSERT_EQ(auth->count, 2);
@@ -882,5 +882,5 @@ TEST(PefileTest, ResultOverview)
             std::memcmp(sig->file_digest.data, real_file_digest, sizeof(real_file_digest)) == 0);
     }
 
-    authenticode_array_free(auth);
+    ap_authenticode_array_free(auth);
 }

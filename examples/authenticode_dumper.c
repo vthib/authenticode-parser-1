@@ -158,8 +158,8 @@ int main(int argc, char **argv)
     fread(data, 1, fsize, fp);
     fclose(fp);
     /* initialize all global openssl objects */
-    initialize_authenticode_parser();
-    AuthenticodeArray *auth = parse_authenticode(data, fsize);
+    initialize_authenticode2_parser();
+    AuthenticodeArray *auth = parse_authenticode2(data, fsize);
     if (!auth) {
         printf("Couldn't parse any signatures.\n");
         return 0;
@@ -171,7 +171,7 @@ int main(int argc, char **argv)
     for (size_t i = 0; i < auth->count; ++i)
         print_authenticode(auth->signatures[i]);
 
-    authenticode_array_free(auth);
+    authenticode2_array_free(auth);
     free(data);
 
     return 0;

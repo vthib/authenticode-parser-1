@@ -28,18 +28,18 @@ SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 
-uint16_t bswap16(uint16_t d)
+uint16_t ap_bswap16(uint16_t d)
 {
     return (d << 8) | (d >> 8);
 }
 
-uint32_t bswap32(uint32_t d)
+uint32_t ap_bswap32(uint32_t d)
 {
     return (((d)&0xff000000) >> 24) | (((d)&0x00ff0000) >> 8) | (((d)&0x0000ff00) << 8) |
            (((d)&0x000000ff) << 24);
 }
 
-int calculate_digest(const EVP_MD* md, const uint8_t* data, size_t len, uint8_t* digest)
+int ap_calculate_digest(const EVP_MD* md, const uint8_t* data, size_t len, uint8_t* digest)
 {
     unsigned int outLen = 0;
 
@@ -56,7 +56,7 @@ end:
     return (int)outLen;
 }
 
-int byte_array_init(ByteArray* arr, const uint8_t* data, int len)
+int ap_byte_array_init(ByteArray* arr, const uint8_t* data, int len)
 {
     if (len == 0) {
         arr->data = NULL;
@@ -73,7 +73,7 @@ int byte_array_init(ByteArray* arr, const uint8_t* data, int len)
     return 0;
 }
 
-int64_t ASN1_TIME_to_int64_t(const ASN1_TIME* time)
+int64_t ap_ASN1_TIME_to_int64_t(const ASN1_TIME* time)
 {
     struct tm t = {0};
     if (!time)

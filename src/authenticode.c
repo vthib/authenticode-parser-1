@@ -120,7 +120,7 @@ static void parse_certificates(const STACK_OF(X509) * certs, CertificateArray* r
     int certCount = sk_X509_num(certs);
     int i = 0;
     for (; i < certCount; ++i) {
-        Certificate* cert = certificate_new(sk_X509_value(certs, i));
+        Certificate* cert = ap_certificate_new(sk_X509_value(certs, i));
         if (!cert)
             break;
 
@@ -149,12 +149,12 @@ static void parse_nested_authenticode(PKCS7_SIGNER_INFO* si, AuthenticodeArray* 
             break;
         int len = nested->value.sequence->length;
         const uint8_t* data = nested->value.sequence->data;
-        AuthenticodeArray* auth = authenticode_new(data, len);
+        AuthenticodeArray* auth = ap_authenticode_new(data, len);
         if (!auth)
             continue;
 
         authenticode_array_move(result, auth);
-        authenticode_array_free(auth);
+        ap_authenticode_array_free(auth);
     }
 }
 
@@ -181,11 +181,11 @@ static void parse_pkcs9_countersig(PKCS7* p7, Authenticode* auth)
         int len = nested->value.sequence->length;
         const uint8_t* data = nested->value.sequence->data;
 
-        Countersignature* sig = pkcs9_countersig_new(data, len, p7->d.sign->cert, si->enc_digest);
+        Countersignature* sig = ap_pkcs9_countersig_new(data, len, p7->d.sign->cert, si->enc_digest);
         if (!sig)
             continue;
 
-        countersignature_array_insert(auth->countersigs, sig);
+        ap_countersignature_array_insert(auth->countersigs, sig);
     }
 }
 
@@ -197,14 +197,14 @@ static void extract_ms_counter_certs(const uint8_t* data, int len, CertificateAr
         return;
 
     STACK_OF(X509)* certs = p7->d.sign->cert;
-    CertificateArray* certArr = certificate_array_new(sk_X509_num(certs));
+    CertificateArray* certArr = ap_certificate_array_new(sk_X509_num(certs));
     if (!certArr) {
         PKCS7_free(p7);
         return;
     }
     parse_certificates(certs, certArr);
-    certificate_array_move(result, certArr);
-    certificate_array_free(certArr);
+    ap_certificate_array_move(result, certArr);
+    ap_certificate_array_free(certArr);
 
     PKCS7_free(p7);
 }
@@ -232,13 +232,13 @@ static void parse_ms_countersig(PKCS7* p7, Authenticode* auth)
         int len = nested->value.sequence->length;
         const uint8_t* data = nested->value.sequence->data;
 
-        Countersignature* sig = ms_countersig_new(data, len, si->enc_digest);
+        Countersignature* sig = ap_ms_countersig_new(data, len, si->enc_digest);
         if (!sig)
             return;
 
         /* Because MS TimeStamp countersignature has it's own SET of certificates
          * extract it back into parent signature for consistency with PKCS9 */
-        countersignature_array_insert(auth->countersigs, sig);
+        ap_countersignature_array_insert(auth->countersigs, sig);
         extract_ms_counter_certs(data, len, auth->certs);
     }
 }
@@ -275,7 +275,7 @@ static bool authenticode_verify(PKCS7* p7, PKCS7_SIGNER_INFO* si, X509* signCert
 
 /* Creates all the Authenticode objects so we can parse them with OpenSSL, is not thread-safe, needs
  * to be called once before any multi-threading environmentt - https://github.com/openssl/openssl/issues/13524 */
-void initialize_authenticode_parser()
+void ap_initialize_authenticode_parser()
 {
     OBJ_create("1.3.6.1.4.1.311.2.1.12", "spcSpOpusInfo", "SPC_SP_OPUS_INFO_OBJID");
     OBJ_create("1.3.6.1.4.1.311.3.3.1", "spcMsCountersignature", "SPC_MICROSOFT_COUNTERSIGNATURE");
@@ -285,7 +285,7 @@ void initialize_authenticode_parser()
 
 /* Return array of Authenticode signatures stored in the data, there can be multiple
  * of signatures as Authenticode signatures are often nested through unauth attributes */
-AuthenticodeArray* authenticode_new(const uint8_t* data, int32_t len)
+AuthenticodeArray* ap_authenticode_new(const uint8_t* data, int32_t len)
 {
     if (!data || len <= 0)
         return NULL;
@@ -331,7 +331,7 @@ AuthenticodeArray* authenticode_new(const uint8_t* data, int32_t len)
 
     STACK_OF(X509)* certs = p7data->cert;
 
-    auth->certs = certificate_array_new(sk_X509_num(certs));
+    auth->certs = ap_certificate_array_new(sk_X509_num(certs));
     if (!auth->certs) {
         auth->verify_flags = AUTHENTICODE_VFY_INTERNAL_ERROR;
         goto end;
@@ -352,7 +352,7 @@ AuthenticodeArray* authenticode_new(const uint8_t* data, int32_t len)
 
     int digestLen = messageDigest->digest->length;
     const uint8_t* digestData = messageDigest->digest->data;
-    byte_array_init(&auth->digest, digestData, digestLen);
+    ap_byte_array_init(&auth->digest, digestData, digestLen);
 
     SpcIndirectDataContent_free(dataContent);
 
@@ -395,7 +395,7 @@ AuthenticodeArray* authenticode_new(const uint8_t* data, int32_t len)
 
     sk_X509_free(signCertStack);
 
-    signer->chain = parse_signer_chain(signCert, certs);
+    signer->chain = ap_parse_signer_chain(signCert, certs);
 
     /* Get the Signers digest of Authenticode content */
     ASN1_TYPE* digest = PKCS7_get_signed_attribute(si, NID_pkcs9_messageDigest);
@@ -409,7 +409,7 @@ AuthenticodeArray* authenticode_new(const uint8_t* data, int32_t len)
 
     digestLen = digest->value.asn1_string->length;
     digestData = digest->value.asn1_string->data;
-    byte_array_init(&signer->digest, digestData, digestLen);
+    ap_byte_array_init(&signer->digest, digestData, digestLen);
 
     /* Authenticode stores optional programName in non-optional SpcSpOpusInfo attribute */
     ASN1_TYPE* spcInfo = PKCS7_get_signed_attribute(si, OBJ_txt2nid(NID_spc_info));
@@ -523,7 +523,7 @@ error:
     return 1;
 }
 
-AuthenticodeArray* parse_authenticode(const uint8_t* pe_data, uint64_t pe_len)
+AuthenticodeArray* ap_parse_authenticode(const uint8_t* pe_data, uint64_t pe_len)
 {
     const uint64_t dos_hdr_size = 0x40;
     if (pe_len < dos_hdr_size)
@@ -568,7 +568,7 @@ AuthenticodeArray* parse_authenticode(const uint8_t* pe_data, uint64_t pe_len)
     if (pe_len < cert_addr + dwLength)
         return NULL;
     /* dwLength = offsetof(WIN_CERTIFICATE, bCertificate) + (size of the variable-length binary array contained within bCertificate) */
-    AuthenticodeArray* auth_array = authenticode_new(pe_data + cert_addr + 0x8, dwLength - 0x8);
+    AuthenticodeArray* auth_array = ap_authenticode_new(pe_data + cert_addr + 0x8, dwLength - 0x8);
     if (!auth_array)
         return NULL;
 
@@ -618,7 +618,7 @@ static void signer_free(Signer* si)
         free(si->digest.data);
         free(si->digest_alg);
         free(si->program_name);
-        certificate_array_free(si->chain);
+        ap_certificate_array_free(si->chain);
         free(si);
     }
 }
@@ -630,13 +630,13 @@ static void authenticode_free(Authenticode* auth)
         free(auth->file_digest.data);
         free(auth->digest_alg);
         signer_free(auth->signer);
-        certificate_array_free(auth->certs);
-        countersignature_array_free(auth->countersigs);
+        ap_certificate_array_free(auth->certs);
+        ap_countersignature_array_free(auth->countersigs);
         free(auth);
     }
 }
 
-void authenticode_array_free(AuthenticodeArray* arr)
+void ap_authenticode_array_free(AuthenticodeArray* arr)
 {
     if (arr) {
         for (size_t i = 0; i < arr->count; ++i) {

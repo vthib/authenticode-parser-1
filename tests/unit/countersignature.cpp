@@ -12,7 +12,7 @@ TEST(CountersignatureModule, countersignature_array_insert)
 
     Countersignature countersig1 = {};
 
-    int res = countersignature_array_insert(&array, &countersig1);
+    int res = ap_countersignature_array_insert(&array, &countersig1);
     EXPECT_EQ(res, 0);
     ASSERT_EQ(array.count, 1);
     ASSERT_TRUE(array.counters);
@@ -20,7 +20,7 @@ TEST(CountersignatureModule, countersignature_array_insert)
 
     Countersignature countersig2;
 
-    res = countersignature_array_insert(&array, &countersig2);
+    res = ap_countersignature_array_insert(&array, &countersig2);
     EXPECT_EQ(res, 0);
     ASSERT_EQ(array.count, 2);
     ASSERT_TRUE(array.counters);
@@ -42,13 +42,13 @@ TEST(CountersignatureModule, countersignature_array_move)
     Countersignature countersig1;
     Countersignature countersig2;
 
-    int res = countersignature_array_insert(&array2, &countersig1);
+    int res = ap_countersignature_array_insert(&array2, &countersig1);
     EXPECT_EQ(res, 0);
 
-    res = countersignature_array_insert(&array2, &countersig2);
+    res = ap_countersignature_array_insert(&array2, &countersig2);
     EXPECT_EQ(res, 0);
 
-    res = countersignature_array_move(&array1, &array2);
+    res = ap_countersignature_array_move(&array1, &array2);
     EXPECT_EQ(res, 0);
 
     ASSERT_TRUE(array1.counters);

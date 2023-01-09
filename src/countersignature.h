@@ -35,16 +35,16 @@ SOFTWARE.
 extern "C" {
 #endif
 
-Countersignature* pkcs9_countersig_new(
+Countersignature* ap_pkcs9_countersig_new(
     const uint8_t* data, long size, STACK_OF(X509) * certs, ASN1_STRING* enc_digest);
-Countersignature* ms_countersig_new(const uint8_t* data, long size, ASN1_STRING* enc_digest);
+Countersignature* ap_ms_countersig_new(const uint8_t* data, long size, ASN1_STRING* enc_digest);
 
-int countersignature_array_insert(CountersignatureArray* arr, Countersignature* sig);
+int ap_countersignature_array_insert(CountersignatureArray* arr, Countersignature* sig);
 /* Moves all countersignatures of src and inserts them into dst */
-int countersignature_array_move(CountersignatureArray* dst, CountersignatureArray* src);
+int ap_countersignature_array_move(CountersignatureArray* dst, CountersignatureArray* src);
 
-void countersignature_free(Countersignature* sig);
-void countersignature_array_free(CountersignatureArray* arr);
+void ap_countersignature_free(Countersignature* sig);
+void ap_countersignature_array_free(CountersignatureArray* arr);
 
 #ifdef __cplusplus
 }

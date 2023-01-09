@@ -38,28 +38,28 @@ extern "C" {
 #endif
 
 /* Endianity related functions for PE reading */
-uint16_t bswap16(uint16_t d);
-uint32_t bswap32(uint32_t d);
+uint16_t ap_bswap16(uint16_t d);
+uint32_t ap_bswap32(uint32_t d);
 
 #if defined(WORDS_BIGENDIAN)
-#define letoh16(x) bswap16(x)
-#define letoh32(x) bswap32(x)
+#define letoh16(x) ap_bswap16(x)
+#define letoh32(x) ap_bswap32(x)
 #define betoh16(x) (x)
 #define betoh32(x) (x)
 #else
 #define letoh16(x) (x)
 #define letoh32(x) (x)
-#define betoh16(x) bswap16(x)
-#define betoh32(x) bswap32(x)
+#define betoh16(x) ap_bswap16(x)
+#define betoh32(x) ap_bswap32(x)
 #endif
 
 /* Calculates digest md of data, return bytes written to digest or 0 on error
  * Maximum of EVP_MAX_MD_SIZE will be written to digest */
-int calculate_digest(const EVP_MD* md, const uint8_t* data, size_t len, uint8_t* digest);
+int ap_calculate_digest(const EVP_MD* md, const uint8_t* data, size_t len, uint8_t* digest);
 /* Copies data of length len into already existing arr */
-int byte_array_init(ByteArray* arr, const uint8_t* data, int len);
+int ap_byte_array_init(ByteArray* arr, const uint8_t* data, int len);
 /* Converts ASN1_TIME string time into a unix timestamp */
-int64_t ASN1_TIME_to_int64_t(const ASN1_TIME* time);
+int64_t ap_ASN1_TIME_to_int64_t(const ASN1_TIME* time);
 
 #ifdef __cplusplus
 }
